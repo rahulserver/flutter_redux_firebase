@@ -8,6 +8,7 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:3.2.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.google.gms:google-services:3.2.1'
     }
 }
 
@@ -16,6 +17,15 @@ allprojects {
         google()
         jcenter()
     }
+
+    configurations {
+        all {
+            resolutionStrategy {
+                force "android.arch.lifecycle:runtime:1.1.1"
+            }
+        }
+    }
+
 }
 
 rootProject.buildDir = '../build'
