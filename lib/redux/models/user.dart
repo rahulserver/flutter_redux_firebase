@@ -8,23 +8,33 @@
 //        email: "someemail@somedomain.com"
 // }}
 class User {
+  String password;
   String twitterhandle; // the twitter handle which is the key in firestore
   String email;
   bool active;
   bool loading;
 
-  User({this.twitterhandle, this.email, this.active, this.loading = false});
+  User(
+      {this.password,
+      this.twitterhandle,
+      this.email,
+      this.active,
+      this.loading = false});
 
   factory User.initial() {
     return User(
-        twitterhandle: null, email: null, active: false, loading: false);
+        password: null,
+        twitterhandle: null,
+        email: null,
+        active: false,
+        loading: false);
   }
 
   User copyWith(User user) {
     if (user == null) {
       return User.initial();
     }
-    
+
     return new User(
         twitterhandle: user.twitterhandle ?? this.twitterhandle,
         email: user.email ?? this.email,

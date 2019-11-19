@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:flutter_redux_firebase/redux/models/root_state.dart';
 import 'package:flutter_redux_firebase/redux/reducers/root_reducer.dart';
+import 'package:flutter_redux_firebase/screens/signin.dart';
 import 'package:redux/redux.dart';
 import 'package:redux_thunk/redux_thunk.dart';
 
@@ -15,7 +16,7 @@ void main() {
       thunkMiddleware // Add to middlewares
     ],
   );
-  runApp(StoreProvider(store: store, child: MyApp()));
+   runApp(StoreProvider(store: store, child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -36,11 +37,11 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+//      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: Signin(),
     );
   }
 }
-
 class MyHomePage extends StatelessWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
 

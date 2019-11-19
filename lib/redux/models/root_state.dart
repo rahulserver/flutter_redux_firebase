@@ -11,7 +11,7 @@ class RootState{
   });
 
   factory RootState.initial(){
-    return null;
+    return RootState(user: User.initial());
   }
 
   RootState copyWith({
