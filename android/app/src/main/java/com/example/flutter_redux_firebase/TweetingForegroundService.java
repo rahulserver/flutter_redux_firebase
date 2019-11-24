@@ -131,6 +131,7 @@ public class TweetingForegroundService extends Service {
                             outTxt = "Tweeted Successfully!";
                             success++;
                             consecFailures = 0;
+                            failedCodes.clear();
                         } else {
                             outTxt = result.getException();
                             code = result.getCode();
