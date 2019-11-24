@@ -5,29 +5,21 @@ import android.annotation.TargetApi
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.os.Build
-import android.os.Bundle
+import android.os.*
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 import io.flutter.app.FlutterActivity
 import io.flutter.plugins.GeneratedPluginRegistrant
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
 import androidx.annotation.NonNull
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
-import android.os.Handler
-import android.os.Looper
+import android.util.Log
+import com.example.flutter_redux_firebase.utils.FilePicker
 import com.example.flutter_redux_firebase.utils.FirestoreUtils
 import com.example.flutter_redux_firebase.utils.XAuthUtils
+import twitter4j.auth.AccessToken
 
 
 class MainActivity : FlutterActivity() {
@@ -39,6 +31,7 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         GeneratedPluginRegistrant.registerWith(this)
+        normalFlow();
         if ((ContextCompat.checkSelfPermission(this,
                         Manifest.permission.WRITE_EXTERNAL_STORAGE)
                         != PackageManager.PERMISSION_GRANTED)) {
@@ -52,9 +45,6 @@ class MainActivity : FlutterActivity() {
             // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
             // app-defined int constant. The callback method gets the
             // result of the request.
-        } else {
-            // Permission has already been granted
-            normalFlow();
         }
     }
 
@@ -77,16 +67,34 @@ class MainActivity : FlutterActivity() {
                     override fun onMethodCall(p0: MethodCall, p1: MethodChannel.Result) {
                         // TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
                         if (p0.method.equals("launch")) {
-                            startService(Intent(context, TweetingForegroundService::class.java));
-                            GeneratedPluginRegistrant.registerWith(context);
+                            var intent = Intent(context, TweetingForegroundService::class.java);
+                            intent.putExtra("minSec", Integer.parseInt(p0.argument<String>("minSec")));
+                            intent.putExtra("maxSec", Integer.parseInt(p0.argument<String>("maxSec")));
+                            intent.putExtra("excelFile", p0.argument<String>("excelFile"));
+                            intent.putExtra("twitterHandle", p0.argument<String>("twitterHandle"));
+                            intent.putExtra("password", p0.argument<String>("password"));
+                            startService(intent);
+                            finish();
+                            p1.success(null);
+                        } else if (p0.method.equals("pick")) {
+                            FilePicker.showPicker(context, p1, Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path);
+                        } else if (p0.method.equals("abort")) {
+                            var intent = Intent(context, TweetingForegroundService::class.java);
+                            intent.putExtra("action", "abort");
+                            startService(intent);
+                            p1.success(null);
                         } else if (p0.method.equals("checkUser")) {
                             var twitterHandle = p0.argument<String>("twitterHandle");
                             FirestoreUtils(p1, twitterHandle).checkUser();
+                        } else if (p0.method.equals("logTime")) {
+                            var twitterHandle = p0.argument<String>("twitterHandle");
+                            FirestoreUtils(p1, twitterHandle).setTimestampForUser();
                         } else if (p0.method.equals("sharedPrefs.set")) {
                             val sharedPref: SharedPreferences = getSharedPreferences(PREF_NAME, PRIVATE_MODE);
                             var keyToSave = p0.argument<String>("key");
                             var valueToSave = p0.argument<String>("value");
                             sharedPref.edit().putString(keyToSave, valueToSave).apply();
+                            p1.success(null);
                         } else if (p0.method.equals("sharedPrefs.get")) {
                             val sharedPref: SharedPreferences = getSharedPreferences(PREF_NAME, PRIVATE_MODE);
                             var keyToGet = p0.argument<String>("key");
@@ -96,13 +104,27 @@ class MainActivity : FlutterActivity() {
                             p1.success(sharedPref.getAll());
                         } else if (p0.method.equals("loginUser")) {
                             Thread(Runnable {
-                                val token = XAuthUtils.chkLogin (p0.argument<String>("twitterHandle"), p0.argument<String>("password"));
+                                var twitterHandle = p0.argument<String>("twitterHandle");
+                                var password = p0.argument<String>("password");
+                                Log.d("LOGINUSER", twitterHandle);
+                                Log.d("LOGINUSER", password);
+                                val token: AccessToken? = XAuthUtils.chkLogin(twitterHandle, password);
                                 val mainHandler: Handler = Handler(Looper.getMainLooper());
                                 val myRunnable = Runnable {
-                                    p1.success(token);
+                                    if (token != null) {
+                                        var token = token.getToken();
+                                        p1.success(token);
+                                    } else {
+                                        p1.success(null);
+                                    }
                                 }
                                 mainHandler.post(myRunnable);
                             }).start();
+                        } else if (p0.method.equals("sharedPrefs.remove")) {
+                            val sharedPref: SharedPreferences = getSharedPreferences(PREF_NAME, PRIVATE_MODE);
+                            var key = p0.argument<String>("key");
+                            sharedPref.edit().remove(key).commit();
+                            p1.success(null);
                         }
                     }
                 })

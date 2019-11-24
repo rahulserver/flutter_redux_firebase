@@ -9,6 +9,8 @@ final userReducer = combineReducers<User>([
   TypedReducer<User, SetUserMinSec>(_setUserMinSec),
   TypedReducer<User, SetUserMaxSec>(_setUserMaxSec),
   TypedReducer<User, SetUserExcelFile>(_setUserExcelFile),
+  TypedReducer<User, SetUserTweetingAction>(_setUserTweeting),
+  TypedReducer<User, UnSetUserTweetingAction>(_unSetUserTweeting),
 ]);
 
 User _setUser(User userState, SetUserAction action) {
@@ -33,4 +35,12 @@ User _setUserMaxSec(User state, SetUserMaxSec action) {
 
 User _setUserExcelFile(User state, SetUserExcelFile action) {
   return state.copyWith(User(excelFile: action.excelFile));
+}
+
+User _setUserTweeting(User state, SetUserTweetingAction action) {
+  return state.copyWith(User(tweeting: true));
+}
+
+User _unSetUserTweeting(User state, UnSetUserTweetingAction action) {
+  return state.copyWith(User(tweeting: false));
 }

@@ -14,6 +14,14 @@ class UnSetUserLoadingAction {
   UnSetUserLoadingAction();
 }
 
+class SetUserTweetingAction {
+  SetUserTweetingAction();
+}
+
+class UnSetUserTweetingAction {
+  UnSetUserTweetingAction();
+}
+
 class SetUserMinSec {
   final String minSec;
 

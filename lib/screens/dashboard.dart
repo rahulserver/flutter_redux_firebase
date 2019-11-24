@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:flutter_redux_firebase/redux/actions/user_actions.dart';
 import 'package:flutter_redux_firebase/redux/middleware/user_thunk.dart';
 import 'package:flutter_redux_firebase/redux/models/root_state.dart';
 import 'package:flutter_redux_firebase/redux/models/user.dart';
@@ -21,27 +22,7 @@ class Dashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     return StoreConnector<RootState, _ViewModel>(
         converter: (Store<RootState> store) => _ViewModel.fromStore(store),
-        onWillChange: (_ViewModel vm) {
-          if (!vm.user.loading) {
-            // dismiss the loading indicator
-            Navigator.of(context).pop();
-//          if (vm.user.error != null) {
-//            _showDialog(context, "Error", "Error occurred: " + vm.user.error);
-//            return;
-//          }
-//
-//          if (!vm.user.exists) {
-//            _showDialog(context, "Error",
-//                "This handle is not authorized to use this app");
-//            return;
-//          }
-//
-//          if (vm.user.active) {
-//            Navigator.pushNamedAndRemoveUntil(
-//                context, '/dashboard', (Route<dynamic> route) => false);
-//          }
-          }
-        },
+        onWillChange: (_ViewModel vm) {},
         builder: (BuildContext context, _ViewModel vm) {
           return Container(
             decoration: BoxDecoration(
@@ -71,6 +52,7 @@ class Dashboard extends StatelessWidget {
                             Padding(
                               padding: EdgeInsets.fromLTRB(0, 20, 0, 20),
                               child: TextFormField(
+                                initialValue: sp["minSec"],
                                 onChanged: (value) async {
                                   if (value.endsWith(" ")) {
                                     value = value.trim();
@@ -78,6 +60,7 @@ class Dashboard extends StatelessWidget {
                                   await platform.invokeMethod("sharedPrefs.set",
                                       {"key": "minSec", "value": value});
                                   sp["minSec"] = value;
+                                  vm.setMin(value);
                                 },
                                 validator: (value) {
                                   int intValue;
@@ -107,6 +90,7 @@ class Dashboard extends StatelessWidget {
                               ),
                             ),
                             TextFormField(
+                              initialValue: sp["maxSec"],
                               validator: (value) {
                                 int intValue;
                                 try {
@@ -127,6 +111,7 @@ class Dashboard extends StatelessWidget {
                                 await platform.invokeMethod("sharedPrefs.set",
                                     {"key": "maxSec", "value": value});
                                 sp["maxSec"] = value;
+                                vm.setMax(value);
                               },
                               style: TextStyle(
                                 color: Colors.white,
@@ -148,15 +133,14 @@ class Dashboard extends StatelessWidget {
                         padding: EdgeInsets.only(top: 20),
                         child: MaterialButton(
                           onPressed: () async {
-                            if (_formKey.currentState.validate()) {
-                              var file = await FilePicker.getFile(
-                                  type: FileType.CUSTOM, fileExtension: 'xls');
-                              await platform.invokeMethod("sharedPrefs.set",
-                                  {"key": "excelFile", "value": file.path});
-                            }
+                            var filePath = await platform.invokeMethod("pick");
+                            vm.setExcelFile(filePath);
+                            sp["excelFile"] = filePath;
+                            await platform.invokeMethod("sharedPrefs.set",
+                                {"key": "excelFile", "value": filePath});
                           },
                           child: Text(
-                            'START TWEETING',
+                            sp["excelFile"] ?? "CHOOSE FILE",
                             style: TextStyle(
                                 fontSize: 15,
                                 fontFamily: 'SFUIDisplay',
@@ -171,6 +155,105 @@ class Dashboard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(50)),
                         ),
                       ),
+                      Padding(
+                        padding: EdgeInsets.only(top: 20),
+                        child: MaterialButton(
+                          onPressed: () async {
+                            if (_formKey.currentState.validate()) {
+                              if (vm.user.excelFile == null) {
+                                _showDialog(context, "Invalid",
+                                    "You must select the tweet file(.xls)!");
+                              } else {
+                                // check if service is already not running
+                                var running = await platform.invokeMethod(
+                                    "sharedPrefs.get", {"key": "running"});
+                                if (running == null ||
+                                    running == "false" ||
+                                    running == "") {
+                                  vm.setMin(sp["minSec"]);
+                                  vm.setMax(sp["maxSec"]);
+                                  // start the tweeting foreground service
+                                  await platform.invokeMethod("launch", {
+                                    "minSec": sp["minSec"],
+                                    "maxSec": sp["maxSec"],
+                                    "excelFile": sp["excelFile"],
+                                    "twitterHandle": sp["twitterHandle"],
+                                    "password": sp["password"],
+                                  });
+                                  sp["running"] = 'true';
+                                  vm.setUserTweeting();
+                                  // log the time
+                                  await platform.invokeMethod("logTime",
+                                      {"twitterHandle": vm.user.twitterhandle});
+                                } else {
+                                  await platform.invokeMethod(
+                                      "sharedPrefs.remove", {"key": "token"});
+                                  await platform.invokeMethod(
+                                      "sharedPrefs.remove",
+                                      {"key": "excelFile"});
+                                  await platform.invokeMethod("abort");
+
+                                  sp["excelFile"] = null;
+                                  sp["token"] = null;
+                                  sp["running"] = 'false';
+                                  vm.unSetUserTweeting();
+                                  Navigator.pushNamedAndRemoveUntil(context, "/", (Route<dynamic> route) => false);
+                                }
+                              }
+                            }
+                          },
+                          child: Text(
+                            (vm.user.tweeting != null && vm.user.tweeting)
+                                ? "STOP"
+                                : "START",
+                            style: TextStyle(
+                                fontSize: 15,
+                                fontFamily: 'SFUIDisplay',
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white),
+                          ),
+                          color: Color(0xffff2d55),
+                          elevation: 0,
+                          minWidth: 35,
+                          height: 60,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(50)),
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.only(top: 20),
+                        child: MaterialButton(
+                          onPressed: () async {
+                            await platform.invokeMethod(
+                                "sharedPrefs.remove", {"key": "token"});
+                            await platform.invokeMethod(
+                                "sharedPrefs.remove", {"key": "excelFile"});
+                            await platform.invokeMethod("abort");
+
+                            sp["excelFile"] = null;
+                            sp["token"] = null;
+                            sp["running"] = 'false';
+                            vm.unSetUserTweeting();
+                            // navigate to dashbboard
+                            Navigator.pushNamedAndRemoveUntil(
+                                context, '/', (Route<dynamic> route) => false);
+                          },
+                          child: Text(
+                            "LOGOUT",
+                            style: TextStyle(
+                                fontSize: 15,
+                                fontFamily: 'SFUIDisplay',
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white),
+                          ),
+                          color: Color(0xffff2d55),
+                          elevation: 0,
+                          minWidth: 35,
+                          height: 60,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(50)),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -178,54 +261,60 @@ class Dashboard extends StatelessWidget {
             ),
           );
         });
+  }
 
-    // TODO: implement build
-//    return Scaffold(
-//      appBar: AppBar(title: Text('Dashboard')),
-//      body: Center(
-//        child: Padding(
-//          padding: EdgeInsets.only(top: 20),
-//          child: MaterialButton(
-//            onPressed: () {
-//              Navigator.pushNamedAndRemoveUntil(context, '/', (Route<dynamic> route) => false);
-//            },
-//            //since this is only a UI app
-//            child: Text(
-//              'SIGN OUT',
-//              style: TextStyle(
-//                fontSize: 15,
-//                fontFamily: 'SFUIDisplay',
-//                fontWeight: FontWeight.bold,
-//              ),
-//            ),
-//            color: Color(0xffff2d55),
-//            elevation: 0,
-//            minWidth: 400,
-//            height: 50,
-//            textColor: Colors.white,
-//            shape:
-//            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-//          ),
-//        ),
-//      ),
-//    );
+  void _showDialog(context, title, contentText) {
+    // flutter defined function
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        // return object of type Dialog
+        return new AlertDialog(
+          title: new Text(title),
+          content: new Text(contentText),
+        );
+      },
+    );
   }
 }
 
 bool isInteger(int value) => value is int || value == value.roundToDouble();
 
-typedef void MyCallback(String handle, String password);
+typedef void MyCallback(String excelFile);
+typedef void StringCallback(String val);
 
 class _ViewModel {
-  final MyCallback fetch;
+  final MyCallback setExcelFile;
   final User user;
+  final StringCallback setMin;
+  final StringCallback setMax;
+  final VoidCallback setUserTweeting;
+  final VoidCallback unSetUserTweeting;
 
-  _ViewModel({@required this.fetch, @required this.user});
+  _ViewModel(
+      {@required this.setExcelFile,
+      @required this.setUserTweeting,
+      @required this.unSetUserTweeting,
+      @required this.user,
+      @required this.setMin,
+      @required this.setMax});
 
   static _ViewModel fromStore(Store<RootState> store) {
     return _ViewModel(
-        fetch: (String twitterHandle, String password) async {
-          store.dispatch(fetchUser(twitterHandle, password));
+        setExcelFile: (String excelFile) async {
+          store.dispatch(SetUserExcelFile(excelFile));
+        },
+        setUserTweeting: () async {
+          store.dispatch(SetUserTweetingAction());
+        },
+        unSetUserTweeting: () async {
+          store.dispatch(UnSetUserTweetingAction());
+        },
+        setMin: (String min) async {
+          store.dispatch(SetUserMinSec(min));
+        },
+        setMax: (String max) async {
+          store.dispatch(SetUserMaxSec(max));
         },
         user: store.state.user);
   }

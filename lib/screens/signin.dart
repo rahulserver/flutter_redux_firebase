@@ -22,22 +22,36 @@ class Signin extends StatelessWidget {
   Widget build(BuildContext context) {
     return StoreConnector<RootState, _ViewModel>(
         converter: (Store<RootState> store) => _ViewModel.fromStore(store),
-        onWillChange: (_ViewModel vm) {
-          if (!vm.user.loading) {
+        onWillChange: (_ViewModel vm) async {
+          if ((vm.user.loading != null) && !vm.user.loading) {
             // dismiss the loading indicator
             Navigator.of(context).pop();
+
             if (vm.user.error != null) {
               _showDialog(context, "Error", "Error occurred: " + vm.user.error);
               return;
             }
 
-            if (!vm.user.exists) {
+            if ((vm.user.exists == null) || !vm.user.exists) {
               _showDialog(context, "Error",
                   "This handle is not authorized to use this app");
               return;
             }
 
-            if (vm.user.active) {
+            if ((vm.user.active != null) && !vm.user.active) {
+              _showDialog(context, "Error", "Your twitter handle is inactive");
+              return;
+            }
+
+            if (vm.user.token != null) {
+              try {
+                await platform.invokeMethod("sharedPrefs.set",
+                    {"key": "token", "value": vm.user.token});
+                sp["token"] = vm.user.token;
+              } catch (e) {
+                print("e e" + e);
+              }
+              // navigate to dashbboard
               Navigator.pushNamedAndRemoveUntil(
                   context, '/dashboard', (Route<dynamic> route) => false);
             }
@@ -74,7 +88,7 @@ class Signin extends StatelessWidget {
                               child: TextFormField(
                                 initialValue: sp["twitterHandle"],
                                 onChanged: (value) async {
-                                  if(value.endsWith(" ")) {
+                                  if (value.endsWith(" ")) {
                                     value = value.trim();
                                   }
                                   await platform.invokeMethod("sharedPrefs.set",
@@ -104,7 +118,7 @@ class Signin extends StatelessWidget {
                             child: TextFormField(
                               initialValue: sp["password"],
                               onChanged: (value) async {
-                                if(value.endsWith(" ")) {
+                                if (value.endsWith(" ")) {
                                   value = value.trim();
                                 }
                                 await platform.invokeMethod("sharedPrefs.set",
@@ -133,18 +147,14 @@ class Signin extends StatelessWidget {
                             padding: EdgeInsets.only(top: 20),
                             child: MaterialButton(
                               onPressed: () async {
-                                if (vm.user.loading) {
+                                if (vm.user.loading != null &&
+                                    vm.user.loading) {
                                   return;
                                 }
                                 if (_formKey.currentState.validate()) {
-                                  var twitterHandle = await platform
-                                      .invokeMethod("sharedPrefs.get",
-                                          {"key": "twitterHandle"});
-                                  var password = await platform.invokeMethod(
-                                      "sharedPrefs.get", {"key": "password"});
+                                  var twitterHandle = sp["twitterHandle"];
+                                  var password = sp["password"];
                                   _showLoadingDialog(context);
-                                  platform.invokeMethod("checkUser",
-                                      {"twitterHandle": twitterHandle});
                                   vm.fetch(twitterHandle, password);
                                 }
                               },

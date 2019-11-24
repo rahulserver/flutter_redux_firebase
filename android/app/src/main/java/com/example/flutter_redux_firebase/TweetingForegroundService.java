@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.IBinder;
 
@@ -31,6 +32,9 @@ import java.util.Random;
 public class TweetingForegroundService extends Service {
     public static final String CHANNEL_ID = "TweetingForegroundService";
     public static boolean RUNNING = false;
+    private int PRIVATE_MODE = 0;
+    private String PREF_NAME = "mindorks-welcome";
+    private Thread t;
 
     @Override
     public void onCreate() {
@@ -39,14 +43,26 @@ public class TweetingForegroundService extends Service {
 
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
+        String action = intent.getStringExtra("action");
+        if (action != null && action.equals("abort")) {
+            stopSelf();
+            if (t!=null && t.isAlive()) {
+                t.interrupt();
+            }
+            // for stopping the created thread
+            return START_NOT_STICKY;
+        }
+
         if (RUNNING) {
             return START_NOT_STICKY;
         }
-        int minSec = intent.getIntExtra("minSec", 6);
-        // ensure minSec is not less than 60
-//        minSec = minSec < 60 ? 60 : minSec;
 
-        int maxSec = intent.getIntExtra("maxSec", 9);
+        int minSec = intent.getIntExtra("minSec", 60);
+
+        // ensure minSec is not less than 60
+        minSec = minSec < 60 ? 60 : minSec;
+
+        int maxSec = intent.getIntExtra("maxSec", 90);
         int temp = 0;
         if (minSec > maxSec) {
             temp = minSec;
@@ -54,43 +70,50 @@ public class TweetingForegroundService extends Service {
             maxSec = temp;
         }
 
+        // difference must be atleast 100 sec.
         int difference = maxSec - minSec;
-//        if (difference < 100) {
-//            maxSec = minSec + 100;
-//        }
+        if (difference < 100) {
+            maxSec = minSec + 100;
+        }
 
         final int min = minSec;
         final int max = maxSec;
+
         createNotificationChannel();
+
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this,
                 0, notificationIntent, 0);
         NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Foreground Service")
-                .setSmallIcon(android.R.drawable.gallery_thumb)
+                .setSmallIcon(android.R.drawable.btn_star_big_on)
                 .setContentIntent(pendingIntent)
                 .setOnlyAlertOnce(true);
 
         //do heavy work on a background thread
-        Thread t = new Thread(new Runnable() {
+        t = new Thread(new Runnable() {
+            SharedPreferences sp = getSharedPreferences(PREF_NAME, PRIVATE_MODE);
+
             @Override
             public void run() {
+                int success = 0;
+                int failed = 0;
+                int remaining = 0;
+                int total = 0;
                 try {
                     RUNNING = true;
+                    sp.edit().putString("running", "true").commit();
                     String pathName = intent.getStringExtra("excelFile");
-                    if (pathName == null) {
-                        pathName = "/sdcard/tweets.xls";
-                    }
+                    String twitterHandle = intent.getStringExtra("twitterHandle");
+                    String password = intent.getStringExtra("password");
                     ArrayList<Integer> failedCodes = new ArrayList<>();
                     int consecFailures = 0;
-                    AccessToken token = XAuthUtils.chkLogin("08bit062", "morrismano");
+                    AccessToken token = XAuthUtils.chkLogin(twitterHandle, password);
                     File excelFile = new File(pathName);
                     ArrayList<Integer> indices = ExcelUtils.getTweetRowIndices(excelFile);
-                    int total = indices.size();
-                    int success = 0;
-                    int failed = 0;
-                    int remaining = total;
+                    total = indices.size();
+                    remaining = total;
                     builder.setProgress(total, success + failed, false);
                     builder.setContentText("REMAINING: " + remaining);
                     Notification notification = builder.build();
@@ -138,11 +161,20 @@ public class TweetingForegroundService extends Service {
                         builder.setProgress(total, success + failed, false);
                         nm.notify(1, builder.build());
 
-                        // find the random sleep interval
-                        Thread.sleep(interval * 1000);
+                        if (i < indices.size() - 1) {
+                            // find the random sleep interval
+                            Thread.sleep(interval * 1000);
+                        }
                     }
                     stopSelf();
                     builder.setContentText("Finished!");
+                    builder.setProgress(total, total, false);
+                    builder.setStyle(new NotificationCompat.BigTextStyle().bigText(
+                            ("SUCCESS: " + success + " FAILED: " + failed + " REMAINING: " + remaining)));
+                    nm.notify(1, builder.build());
+                } catch (InterruptedException e) {
+                    stopSelf();
+                    builder.setContentText("Stopped!");
                     builder.setProgress(total, total, false);
                     builder.setStyle(new NotificationCompat.BigTextStyle().bigText(
                             ("SUCCESS: " + success + " FAILED: " + failed + " REMAINING: " + remaining)));
@@ -154,6 +186,8 @@ public class TweetingForegroundService extends Service {
                     nm.notify(1, builder.build());
                 } finally {
                     RUNNING = false;
+                    sp.edit().putString("running", "false").commit();
+                    sp.edit().remove("token").commit();
                 }
             }
         });
@@ -167,6 +201,9 @@ public class TweetingForegroundService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        SharedPreferences sp = getSharedPreferences(PREF_NAME, PRIVATE_MODE);
+        sp.edit().putString("running", "false").commit();
+        RUNNING = false;
     }
 
     @Nullable

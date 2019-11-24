@@ -14,23 +14,38 @@ ThunkAction<RootState> fetchUser(twitterHandle, password) {
     try {
       store.dispatch(SetUserLoadingAction());
       var data = await FirebaseService.getUserData(twitterHandle);
-      if(data!=null) {
+      if (data != null) {
         // user exists
-        user = User(twitterhandle: twitterHandle, email: data["email"], active: data["active"], loading: false, exists: true, error: null);
+        user = User(
+            password: password,
+            twitterhandle: twitterHandle,
+            email: data["email"],
+            active: data["active"],
+            loading: false,
+            exists: true,
+            error: null);
         var tokenData = await TwitterService.loginUser(twitterHandle, password);
-
+        if (tokenData != null) {
+          user.token = tokenData;
+        } else {
+          user.error = "Your account failed to login to twitter.";
+        }
         store.dispatch(SetUserAction(user));
       } else {
         // user does not exist
-        user = User(twitterhandle: twitterHandle, loading: false, exists: false, error: null);
+        user = User(
+            twitterhandle: twitterHandle,
+            loading: false,
+            exists: false,
+            error: null);
         store.dispatch(SetUserAction(user));
       }
     } catch (e) {
       // TODO: handle error
-      print("Error happened future "+e.toString());
-      user = User(twitterhandle: twitterHandle, loading: false, error: e.details);
+      print("Error happened future " + e.toString());
+      user =
+          User(twitterhandle: twitterHandle, loading: false, error: e.details);
       store.dispatch(SetUserAction(user));
     }
   };
 }
-

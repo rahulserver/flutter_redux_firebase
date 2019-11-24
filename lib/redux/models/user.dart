@@ -19,6 +19,7 @@ class User {
   bool active;
   bool loading;
   bool exists;
+  bool tweeting;
 
   User(
       {this.password,
@@ -26,10 +27,11 @@ class User {
       this.email,
       this.error,
       this.active,
-      this.loading = false,
-      this.exists = false,
-      this.minSec = "60",
-      this.maxSec = "180",
+      this.loading = null,
+      this.exists = null,
+      this.tweeting = null,
+      this.minSec = null,
+      this.maxSec = null,
       this.token = null,
       this.excelFile = null});
 
@@ -39,12 +41,13 @@ class User {
         twitterhandle: null,
         email: null,
         error: null,
-        active: false,
-        loading: false,
-        exists: false,
+        active: null,
+        loading: null,
+        exists: null,
+        tweeting: null,
         token: null,
-        minSec: "60",
-        maxSec: "180",
+        minSec: null,
+        maxSec: null,
         excelFile: null);
   }
 
@@ -55,10 +58,12 @@ class User {
 
     return new User(
         twitterhandle: user.twitterhandle ?? this.twitterhandle,
+        password: user.password ?? this.password,
         email: user.email ?? this.email,
         error: user.error,
         active: user.active ?? this.active,
         loading: user.loading ?? this.loading,
+        tweeting: user.tweeting ?? this.tweeting,
         exists: user.exists ?? this.exists,
         minSec: user.minSec ?? this.minSec,
         maxSec: user.maxSec ?? this.maxSec,

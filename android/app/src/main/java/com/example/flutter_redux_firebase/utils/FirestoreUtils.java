@@ -8,6 +8,11 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.TimeZone;
+
 import io.flutter.Log;
 import io.flutter.plugin.common.MethodChannel;
 
@@ -43,9 +48,28 @@ public class FirestoreUtils {
                 }
             }
         });
-
     }
 
+    public void setTimestampForUser() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference docRef = db.collection("users").document(twitterHandle);
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("last_timestamp", System.currentTimeMillis());
+        data.put("ist_string", getTimeStringInIST());
+        docRef.update(data);
+        // TODO handle success or failed events. Currently we don't bother
+        result.success("done");
+    }
+
+    private String getTimeStringInIST() {
+        SimpleDateFormat sd = new SimpleDateFormat(
+                "dd-MM-yyyy 'at' HH:mm:ss z");
+        Date date = new Date();
+        // TODO: Avoid using the abbreviations when fetching time zones.
+        // Use the full Olson zone ID instead.
+        sd.setTimeZone(TimeZone.getTimeZone("IST"));
+        return sd.format(date);
+    }
 }
 
 class FirebaseResponse {
