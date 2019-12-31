@@ -12,7 +12,7 @@ const platform =
     const MethodChannel('com.example.flutter_redux_firebase/foreground');
 
 class Signin extends StatelessWidget {
-  static final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>(debugLabel: '_SigninForm');
 
   var sp;
 
@@ -52,8 +52,8 @@ class Signin extends StatelessWidget {
                 print("e e" + e);
               }
               // navigate to dashbboard
-              Navigator.pushNamedAndRemoveUntil(
-                  context, '/dashboard', (Route<dynamic> route) => false);
+              Navigator.pushReplacementNamed(
+                  context, '/dashboard');
             }
           }
         },
@@ -64,7 +64,7 @@ class Signin extends StatelessWidget {
                 Container(
                   decoration: BoxDecoration(
                       image: DecorationImage(
-                          image: AssetImage('assets/image1.png'),
+                          image: AssetImage('assets/logo.jpg'),
                           fit: BoxFit.fitWidth,
                           alignment: Alignment.topCenter)),
                 ),
@@ -91,6 +91,7 @@ class Signin extends StatelessWidget {
                                   if (value.endsWith(" ")) {
                                     value = value.trim();
                                   }
+                                  value = value.toLowerCase();
                                   await platform.invokeMethod("sharedPrefs.set",
                                       {"key": "twitterHandle", "value": value});
                                   sp["twitterHandle"] = value;

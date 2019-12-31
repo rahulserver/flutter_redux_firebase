@@ -16,6 +16,7 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import android.util.Log
+import android.widget.Toast
 import com.example.flutter_redux_firebase.utils.FilePicker
 import com.example.flutter_redux_firebase.utils.FirestoreUtils
 import com.example.flutter_redux_firebase.utils.XAuthUtils
@@ -74,6 +75,7 @@ class MainActivity : FlutterActivity() {
                             intent.putExtra("twitterHandle", p0.argument<String>("twitterHandle"));
                             intent.putExtra("password", p0.argument<String>("password"));
                             startService(intent);
+                            Toast.makeText(context, "Tweeting started successfully!", 3000).show();
                             finish();
                             p1.success(null);
                         } else if (p0.method.equals("pick")) {

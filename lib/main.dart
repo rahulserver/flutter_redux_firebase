@@ -13,6 +13,7 @@ const platform =
     const MethodChannel('com.example.flutter_redux_firebase/foreground');
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   var sp = await platform.invokeMethod("sharedPrefs.all");
   var initialState = RootState.initial();
   if (sp["token"] != null) {
@@ -56,6 +57,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => Signin(sp),
         // When navigating to the "/second" route, build the SecondScreen widget.
         '/dashboard': (context) => Dashboard(sp),
+        '/signin': (context) => Signin(sp)
       },
       theme: ThemeData(
         // This is the theme of your application.

@@ -87,7 +87,7 @@ public class TweetingForegroundService extends Service {
         NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Foreground Service")
-                .setSmallIcon(android.R.drawable.btn_star_big_on)
+                .setSmallIcon(R.mipmap.logo)
                 .setContentIntent(pendingIntent)
                 .setOnlyAlertOnce(true);
 

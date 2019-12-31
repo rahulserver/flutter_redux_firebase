@@ -13,7 +13,7 @@ const platform =
     const MethodChannel('com.example.flutter_redux_firebase/foreground');
 
 class Dashboard extends StatelessWidget {
-  static final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>(debugLabel: '_Dash' );
   var sp;
 
   Dashboard(this.sp);
@@ -27,7 +27,7 @@ class Dashboard extends StatelessWidget {
           return Container(
             decoration: BoxDecoration(
                 image: DecorationImage(
-              image: AssetImage('assets/image2.png'),
+              image: AssetImage('assets/screen.jpg'),
               fit: BoxFit.cover,
             )),
             child: Scaffold(
@@ -160,7 +160,7 @@ class Dashboard extends StatelessWidget {
                         child: MaterialButton(
                           onPressed: () async {
                             if (_formKey.currentState.validate()) {
-                              if (vm.user.excelFile == null) {
+                              if (vm.user.excelFile == null || sp["excelFile"] == null) {
                                 _showDialog(context, "Invalid",
                                     "You must select the tweet file(.xls)!");
                               } else {
@@ -197,7 +197,8 @@ class Dashboard extends StatelessWidget {
                                   sp["token"] = null;
                                   sp["running"] = 'false';
                                   vm.unSetUserTweeting();
-                                  Navigator.pushNamedAndRemoveUntil(context, "/", (Route<dynamic> route) => false);
+                                  Navigator.pushReplacementNamed(
+                                      context, "/signin");
                                 }
                               }
                             }
@@ -235,8 +236,7 @@ class Dashboard extends StatelessWidget {
                             sp["running"] = 'false';
                             vm.unSetUserTweeting();
                             // navigate to dashbboard
-                            Navigator.pushNamedAndRemoveUntil(
-                                context, '/', (Route<dynamic> route) => false);
+                            Navigator.pushReplacementNamed(context, '/signin');
                           },
                           child: Text(
                             "LOGOUT",

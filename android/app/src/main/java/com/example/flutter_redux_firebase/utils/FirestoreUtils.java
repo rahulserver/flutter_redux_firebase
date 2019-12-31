@@ -22,7 +22,7 @@ public class FirestoreUtils {
 
     public FirestoreUtils(MethodChannel.Result result, String twitterHandle) {
         this.result = result;
-        this.twitterHandle = twitterHandle;
+        this.twitterHandle = twitterHandle.toLowerCase();
     }
 
     public void checkUser() {
