@@ -11,6 +11,14 @@ description: A new Flutter project.
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+
+#  NOTE: compile this project using
+#  Flutter 1.9.1+hotfix.6 • channel unknown • unknown source
+#  Framework • revision 68587a0916 (4 months ago) • 2019-09-13 19:46:58 -0700
+#  Engine • revision b863200c37
+#  Tools • Dart 2.5.0
+#  Upgrading flutter or cloud_firestore versions would break the plugin and apk won't be generated
+
 version: 1.0.0+1
 
 environment:
