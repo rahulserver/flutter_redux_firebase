@@ -12,7 +12,7 @@ const platform =
     const MethodChannel('com.example.flutter_redux_firebase/foreground');
 
 class Signin extends StatelessWidget {
-  final _formKey = GlobalKey<FormState>(debugLabel: '_SigninForm');
+  static final _formKey = GlobalKey<FormState>(debugLabel: '_SigninForm');
 
   var sp;
 

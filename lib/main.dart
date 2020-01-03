@@ -51,10 +51,10 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       // Start the app with the "/" named route. In this case, the app starts
       // on the FirstScreen widget.
-      initialRoute: (sp["token"] == null) ? '/' : '/dashboard',
+      initialRoute: '/',
       routes: {
         // When navigating to the "/" route, build the FirstScreen widget.
-        '/': (context) => Signin(sp),
+        '/': (context) => (sp["token"] == null) ? Signin(sp) : Dashboard(sp),
         // When navigating to the "/second" route, build the SecondScreen widget.
         '/dashboard': (context) => Dashboard(sp),
         '/signin': (context) => Signin(sp)

@@ -13,7 +13,7 @@ const platform =
     const MethodChannel('com.example.flutter_redux_firebase/foreground');
 
 class Dashboard extends StatelessWidget {
-  final _formKey = GlobalKey<FormState>(debugLabel: '_Dash' );
+  static final _formKey = GlobalKey<FormState>(debugLabel: '_Dash' );
   var sp;
 
   Dashboard(this.sp);
